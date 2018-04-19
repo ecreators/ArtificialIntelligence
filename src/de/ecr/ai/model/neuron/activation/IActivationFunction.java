@@ -8,12 +8,12 @@ package de.ecr.ai.model.neuron.activation;
 public interface IActivationFunction {
 	
 	/**
-	 * {@see SigmoidActivation}
+	 * {@link SigmoidActivation}
 	 */
 	IActivationFunction SIGMOID = new SigmoidActivation();
 	
 	/**
-	 * {@see TangentHypActivation}
+	 * {@link TangentHypActivation}
 	 */
 	IActivationFunction TANGENT_HYPERBOLIC = new TangentHypActivation();
 	

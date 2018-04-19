@@ -10,7 +10,11 @@ import static java.text.MessageFormat.format;
  *
  * @author Bjoern Frohberg
  */
-public final class InputNeuron extends Neuron {
+public final class InputNeuron extends Neuron implements IBindableSourceNeuron {
+	
+	public InputNeuron(String name) {
+		super(name);
+	}
 	
 	/**
 	 * Allows to set the output directly as an input value for this input neuron.
@@ -27,7 +31,7 @@ public final class InputNeuron extends Neuron {
 	}
 	
 	@Override
-	protected float getError() throws RuntimeException {
+	protected float calculateError() throws RuntimeException {
 		throw new NotImplementedException("Cannot use error for input neuron! Input values won't be update!");
 	}
 }
