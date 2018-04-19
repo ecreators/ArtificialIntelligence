@@ -1,6 +1,7 @@
 package de.ecr.ai.model.neuron;
 
 import de.ecr.ai.model.Binding;
+import de.ecr.ai.model.Layer;
 
 import java.util.List;
 
@@ -14,8 +15,8 @@ import java.util.List;
  */
 public final class HiddenNeuron extends Neuron implements IPropagateBack, IBindableSourceNeuron {
 	
-	public HiddenNeuron(String name) {
-		super(name);
+	public HiddenNeuron(String name, Layer ownerLayer) {
+		super(name, ownerLayer);
 	}
 	
 	@Override

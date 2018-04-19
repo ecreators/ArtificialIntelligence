@@ -1,6 +1,7 @@
 package de.ecr.ai.model.neuron;
 
 import de.ecr.ai.model.Binding;
+import de.ecr.ai.model.Layer;
 import de.ecr.ai.model.neuron.activation.IActivationFunction;
 
 import java.util.ArrayList;
@@ -28,10 +29,16 @@ public abstract class Neuron {
 	// TODO reference layer : Layer
 	protected final List<Binding>       inputBindings;
 	private final   String              name;
+	private final Layer layer;
 	
-	protected Neuron(String name) {
+	protected Neuron(String name, Layer ownerLayer) {
 		this.name = name;
-		inputBindings = new ArrayList<>();
+		this.layer = ownerLayer;
+		this.inputBindings = new ArrayList<>();
+	}
+	
+	public final Layer getLayer() {
+		return layer;
 	}
 	
 	/**
@@ -84,18 +91,10 @@ public abstract class Neuron {
 	
 	/**
 	 * Update output value based on inputs
-	 *
-	 * @deprecated Will be removed and handled outside (#3)
 	 */
-	@Deprecated
-	public void propate() {
-//		NeuronType type = getType();
-//		if(type == NeuronType.INPUT) {
-//			return;
-//		}
-//
-//		float inputSum = (float) (inputBindings.parallelStream().mapToDouble(Binding::calculateOutput).sum() + bias);
-//		this.output = activation.activate(inputSum);
+	public void propagate() {
+		float inputSum = (float) (inputBindings.parallelStream().mapToDouble(Binding::calculateOutput).sum() + bias);
+		this.output = activation.activate(inputSum);
 	}
 	
 	/**

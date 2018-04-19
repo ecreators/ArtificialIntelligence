@@ -1,6 +1,7 @@
 package de.ecr.ai.model.neuron;
 
 import de.ecr.ai.model.Binding;
+import de.ecr.ai.model.Layer;
 import de.ecr.ai.model.neuron.activation.SoftMaxActivation;
 
 import java.util.List;
@@ -19,17 +20,18 @@ public final class OutputNeuron extends Neuron implements IPropagateBack {
 	/**
 	 * Defines the output tolerant between 0 and 1 (inclusive)
 	 */
-	public OutputNeuron(String name) {
-		this(name, false);
+	public OutputNeuron(String name, Layer ownerLayer) {
+		this(name, false, ownerLayer);
 	}
 	
 	/**
 	 * Sets a softmax sigmoid activation function, if not {@code null}.
 	 *
 	 * @param softmax null or a value between 0 and 1 to maximize the result to a boolean 0 or 1
+	 * @param ownerLayer
 	 */
-	public OutputNeuron(String name, boolean softmax) {
-		super(name);
+	public OutputNeuron(String name, boolean softmax, Layer ownerLayer) {
+		super(name, ownerLayer);
 		if(softmax) {
 			setActivation(new SoftMaxActivation(this));
 		}
