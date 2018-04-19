@@ -1,5 +1,6 @@
 package de.ecr.ai.model.neuron;
 
+import de.ecr.ai.model.Layer;
 import de.ecr.ai.model.exception.NotImplementedException;
 
 import static java.text.MessageFormat.format;
@@ -12,8 +13,8 @@ import static java.text.MessageFormat.format;
  */
 public final class InputNeuron extends Neuron implements IBindableSourceNeuron {
 	
-	public InputNeuron(String name) {
-		super(name);
+	public InputNeuron(String name, Layer ownerLayer) {
+		super(name, ownerLayer);
 	}
 	
 	/**
