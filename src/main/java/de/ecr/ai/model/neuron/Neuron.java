@@ -2,10 +2,13 @@ package de.ecr.ai.model.neuron;
 
 import de.ecr.ai.model.Binding;
 import de.ecr.ai.model.Layer;
+import de.ecr.ai.model.annotation.LearningData;
 import de.ecr.ai.model.neuron.activation.IActivationFunction;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * A neuron contain data representing the effect<br/>
@@ -22,14 +25,12 @@ import java.util.List;
  */
 public abstract class Neuron {
 	
-	private         float               output;
-	private         float               bias;
-	//	private         float               errorDelta;
-	private         IActivationFunction activation = IActivationFunction.SIGMOID;
-	// TODO reference layer : Layer
-	protected final List<Binding>       inputBindings;
-	private final   String              name;
-	private final Layer layer;
+	private       float               output;
+	private       float               bias;
+	private       IActivationFunction activation = IActivationFunction.SIGMOID;
+	final         List<Binding>       inputBindings;
+	private final String              name;
+	private final Layer               layer;
 	
 	protected Neuron(String name, Layer ownerLayer) {
 		this.name = name;
@@ -49,8 +50,10 @@ public abstract class Neuron {
 	}
 	
 	/**
-	 * Returns a set bias
+	 * Returns a set bias. A bias is a virtual offset to fix zero calculations.<br/>
+	 * It shifts the error calculation into a better range when calculating with zeros.
 	 */
+	@LearningData
 	public final float getBias() {
 		return bias;
 	}
@@ -142,5 +145,14 @@ public abstract class Neuron {
 	 */
 	public String getName() {
 		return name;
+	}
+	
+	/**
+	 * Returns number weight of each input bindings
+	 */
+	public List<Float> getWeights() {
+		return inputBindings.stream()
+		                    .map(Binding::getWeight)
+		                    .collect(toList());
 	}
 }
