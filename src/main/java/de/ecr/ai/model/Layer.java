@@ -5,10 +5,10 @@ import de.ecr.ai.model.neuron.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.text.MessageFormat.format;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Defines a cluster to neurons to align a related solution path for the neural network
@@ -35,13 +35,14 @@ public final class Layer {
 	TODO in TEST-Method handle, when to stop iteration, if so doing
 	 */
 	
-	private final String       name;
-	private final List<Neuron> neurons;
-	private       NeuronType   type;
-	// TODO implement Neural Network class first!
+	private final String        name;
+	private final List<Neuron>  neurons;
+	private       NeuronType    type;
+	private final NeuralNetwork network; // for later commits "back propagation"
 	
-	public Layer(String name) {
+	public Layer(String name, NeuralNetwork network) {
 		this.name = name;
+		this.network = network;
 		this.neurons = new ArrayList<>();
 	}
 	
@@ -109,7 +110,7 @@ public final class Layer {
 	private void bindToLayerNeurons(Layer parentLayer, IPropagateBack n) {
 		List<IBindableSourceNeuron> sourceNeurons = parentLayer.neurons.parallelStream()
 		                                                               .map(p -> (IBindableSourceNeuron) p)
-		                                                               .collect(Collectors.toList());
+		                                                               .collect(toList());
 		n.bindToInputNeurons(sourceNeurons);
 	}
 	
@@ -133,5 +134,30 @@ public final class Layer {
 				throw new IllegalArgumentException("Missing neuron type: " + type);
 		}
 		return builder;
+	}
+	
+	/**
+	 * Returns the number of neurons in this layer
+	 */
+	public int countNeurons() {
+		return neurons.size();
+	}
+	
+	/**
+	 * Returns weights to each neuron in this layer and it own weight to it input bindings
+	 */
+	public List<List<Float>> getWeights() {
+		return neurons.stream()
+		              .map(Neuron::getWeights)
+		              .collect(toList());
+	}
+	
+	/**
+	 * Returns biases to each neuron
+	 */
+	public List<Float> getBiases() {
+		return neurons.stream()
+		              .map(Neuron::getBias)
+		              .collect(toList());
 	}
 }
