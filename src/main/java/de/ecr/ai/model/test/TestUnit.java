@@ -5,7 +5,6 @@ import de.ecr.ai.model.NeuralNetwork;
 
 /**
  * A unit to pass input values and desired values during a {@link TrainingSession}.
- * TODO TrainingSession missing to this time, comes with future comments
  *
  * @author Bjoern Frohberg
  */
