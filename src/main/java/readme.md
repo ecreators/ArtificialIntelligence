@@ -103,3 +103,43 @@ It has a delegating purpose. It delegate operations through all it holding neuro
 A layer requires an listing for neurons and their creation operation.
 I want to encapsule operations based on it used types, so it is easy to understand,
 what this unit (layer : type) must be able to do.
+
+## Tests
+
+How will you train your network? With this upper prototypes your won't be able 
+to describe a problem to solve with your network.
+
+Your neural network need to be able to accept certain input values
+and desired output values to orient on / to learn from it.
+
+<pre><code></code></pre>
+
+**Task** Training Unit : Type
+
+######_Business Value_
+A Training Unit (type) is a container for definitions of a training step.
+It has 2 properties. What gets in and what is about to get out.
+What gets out does not reqpresent the final values. It are desired values
+for each output neuron, where the network should tweak it's weights to get to it
+closely. 
+
+######_Requirements_
+Create a type to hold input values for tests and desired values for testing desired values
+
+<pre><code></code></pre>
+
+**Task** Training Session : Type
+
+######_Business Value_
+A Training Session (type) is a container for listed Training Units.
+We should be able to hold some informations about our training collection.
+Such as tests (Test Units) and the total error value.
+
+A total error value is a representation for the quality of your network.
+How fit it is (1 - total error). It is a value between 0 and 1. Zero (0) for best results
+and 1 for bad results (what the heck is this?)
+
+######_Requirements_
+A Training Session required inital 2 properties:
+- a list of Training Units and
+- a floating property value for total error
