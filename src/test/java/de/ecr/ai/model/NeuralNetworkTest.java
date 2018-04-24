@@ -1,5 +1,6 @@
 package de.ecr.ai.model;
 
+import de.ecr.ai.model.neuron.activation.IActivationFunction;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -13,7 +14,7 @@ public class NeuralNetworkTest {
 
   /**
    * Test, how to setup a network manually with "build"-method and usage of "readMemory"
-   *
+   * <p>
    * Tests
    * - creating neutwork
    * - create layers
@@ -47,13 +48,13 @@ public class NeuralNetworkTest {
 
   /**
    * Tests, how to push / propagate input values through the network and return the output layer neuron values as array
-   *
+   * <p>
    * - setup with "build"
    * - pass input values into input layer neurons "as is" one-by-one
    * - loop through all layers and call propate on each layer and neuron - calculate neuron output, using inputbindings
-   *   (input value times weight) and pass through activation function, until and including output layer
+   * (input value times weight) and pass through activation function, until and including output layer
    * - return output layer neuron output values as array of floating numbers between 0 and 1
-   *
+   * <p>
    * because the initial weights are random, this test cannot assert for specific output values
    */
   @Test
@@ -78,7 +79,7 @@ public class NeuralNetworkTest {
 
   /**
    * Tests, how to use json and MemoryData as build setup for the network.
-   *
+   * <p>
    * MemoryData is the reminding from the latest training configuration
    */
   @Test
@@ -111,5 +112,40 @@ public class NeuralNetworkTest {
     assertThat(memory.hiddenLayers, is(equalTo(data.hiddenLayers)));
     assertThat(memory.hiddenNeurons, is(equalTo(data.hiddenNeurons)));
     assertThat(memory.generations, is(equalTo(data.generations)));
+  }
+
+  @Test
+  public void testSimpleBackpropagation() {
+    // given
+    NeuralNetwork network = new NeuralNetwork();
+    network.build(1, 1, 1, 1, false);
+
+    // when
+    final float rawInputValue = 2;
+    final float boundaryInputValue = 2f;
+
+    float hiddenWeight = 0.5f;
+    float hiddenBias = 0f;
+    network.setWeight(1, 0, 0, hiddenWeight);
+
+    float outputWeight = 0.5f;
+    float outputBias = 0f;
+    network.setWeight(2, 0, 0, outputWeight);
+
+    float normalizedValue = rawInputValue / boundaryInputValue;
+    float output = network.test(normalizedValue)[0];
+
+    // then
+    // hidden neuron
+    float sum = rawInputValue / boundaryInputValue * hiddenWeight + hiddenBias;
+    IActivationFunction hiddenActivation = IActivationFunction.SIGMOID;
+    float activated = hiddenActivation.activate(sum);
+
+    // output neuron
+    sum = activated * outputWeight + outputBias;
+    IActivationFunction outputActivation = IActivationFunction.SIGMOID;
+    activated = outputActivation.activate(sum);
+
+    assertThat(output, is(equalTo(activated)));
   }
 }

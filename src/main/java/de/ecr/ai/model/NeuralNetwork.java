@@ -2,6 +2,7 @@ package de.ecr.ai.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.ecr.ai.model.annotation.ForTest;
 import de.ecr.ai.model.neuron.InputNeuron;
 import de.ecr.ai.model.neuron.Neuron;
 import de.ecr.ai.model.neuron.NeuronType;
@@ -57,8 +58,12 @@ public final class NeuralNetwork {
       InputNeuron neuron = (InputNeuron) neurons.get(i);
       neuron.setInputValue(inputValues[i]);
     }
-    layers.forEach(Layer::propagate);
-    return layers.get(layers.size() - 1).getOutputs();
+    layers.stream()
+      .filter(l -> l.getType() != NeuronType.INPUT)
+      .forEach(Layer::propagate);
+
+    int lastLayerInput = layers.size() - 1;
+    return layers.get(lastLayerInput).getOutputs();
   }
 
   /**
@@ -221,6 +226,14 @@ public final class NeuralNetwork {
         parentLayer = layer;
       }
     }
+  }
+
+  @ForTest
+  void setWeight(int layerIndex, int neuronIndex, int bindingIndex, float weightToSet) {
+    Layer layer = layers.get(layerIndex);
+    Neuron neuron = Layer.getNeurons(layer).get(neuronIndex);
+    Binding binding = neuron.getInputBindings().get(bindingIndex);
+    binding.setWeight(weightToSet);
   }
 
   // TODO how do a training session? prototype TrainingSession and TrainingUnit
