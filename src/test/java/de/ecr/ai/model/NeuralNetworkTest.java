@@ -11,6 +11,16 @@ import static org.hamcrest.core.Is.is;
  */
 public class NeuralNetworkTest {
 
+  /**
+   * Test, how to setup a network manually with "build"-method and usage of "readMemory"
+   *
+   * Tests
+   * - creating neutwork
+   * - create layers
+   * - create neurons
+   * - create bindings to neurons on an upper layer (parent layer) as fully meshed
+   * - read settings into MemoryData-Object
+   */
   @Test
   public void buildANeuralNetworkSetting() {
     // given
@@ -35,6 +45,17 @@ public class NeuralNetworkTest {
     assertThat(memory.hiddenNeurons, is(equalTo(hiddens)));
   }
 
+  /**
+   * Tests, how to push / propagate input values through the network and return the output layer neuron values as array
+   *
+   * - setup with "build"
+   * - pass input values into input layer neurons "as is" one-by-one
+   * - loop through all layers and call propate on each layer and neuron - calculate neuron output, using inputbindings
+   *   (input value times weight) and pass through activation function, until and including output layer
+   * - return output layer neuron output values as array of floating numbers between 0 and 1
+   *
+   * because the initial weights are random, this test cannot assert for specific output values
+   */
   @Test
   public void propagateValues() {
     // given
@@ -55,6 +76,11 @@ public class NeuralNetworkTest {
     assertThat(values.length, is(not(equalTo(0f))));
   }
 
+  /**
+   * Tests, how to use json and MemoryData as build setup for the network.
+   *
+   * MemoryData is the reminding from the latest training configuration
+   */
   @Test
   public void testMemoryData() {
     // given
