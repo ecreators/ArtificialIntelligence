@@ -4,6 +4,7 @@ import de.ecr.ai.model.Binding;
 import de.ecr.ai.model.Layer;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Determine a neuron inside a hidden layer.
@@ -42,7 +43,7 @@ public final class HiddenNeuron extends Neuron implements IPropagateBack, IBinda
 	
 	@Override
 	public List<Binding> bindToInputNeurons(List<IBindableSourceNeuron> neurons) {
-		neurons.parallelStream().map(n -> new Binding(this, n)).forEach(inputBindings::add);
+		inputBindings.addAll(neurons.stream().map(n -> new Binding(this, n)).collect(Collectors.toList()));
 		return inputBindings;
 	}
 }

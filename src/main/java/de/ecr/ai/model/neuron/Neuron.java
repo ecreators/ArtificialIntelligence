@@ -106,7 +106,7 @@ public abstract class Neuron {
         // set output as value what comes from activation function
 
         double sum = inputBindings
-                .parallelStream()
+                .stream()
                 .mapToDouble(Binding::calculateOutput).sum();
         sum += bias;
 

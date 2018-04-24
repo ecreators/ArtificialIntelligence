@@ -123,7 +123,7 @@ public final class Layer {
      * Fetch neurons inputs, sum them and update output to all neurons in here. Do it parallel, if you like.
      */
     public void propagate() {
-        neurons.parallelStream().forEach(Neuron::propagate);
+        neurons.forEach(Neuron::propagate);
     }
 
     /**
