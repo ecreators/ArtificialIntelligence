@@ -184,6 +184,8 @@ public class NeuralNetworkTest {
 
     // then
     brain.train(session, 0.35f);
+    // is equal as train only
+    // brain.evolute(1, session, 0.35f);
   }
 
   /**

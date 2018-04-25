@@ -3,6 +3,7 @@ package de.ecr.ai.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ecr.ai.model.annotation.ForTest;
+import de.ecr.ai.model.exception.NotImplementedException;
 import de.ecr.ai.model.neuron.InputNeuron;
 import de.ecr.ai.model.neuron.Neuron;
 import de.ecr.ai.model.neuron.NeuronType;
@@ -254,6 +255,8 @@ public final class NeuralNetwork {
       float[] prediction = this.test(test.inputValues);
 
       // TODO back pass a step to evolute the network weights -> long for "magic"
+
+      throw new NotImplementedException("Not yet implemented back pass! :-(");
     }
   }
 
@@ -262,6 +265,8 @@ public final class NeuralNetwork {
    * Remember a neural network is the "brain" of your future object (a bird or so).
    * There you won't be need to implement the iteration all over again.
    * More see {@link #evolute(int, TrainingSession, float)}
+   *
+   * @return returns the generations run (not of all time)
    */
   public int evolute(TrainingSession session, float learningGradient) {
     return evolute(GENERATIONS_MAX, session, learningGradient);
@@ -276,10 +281,7 @@ public final class NeuralNetwork {
   /**
    * Evolutes a brain of an amount of generations or "till infinity"
    *
-   * @param generationsMaximum
-   * @param session
-   * @param learningGradient
-   * @return
+   * @return returns the generations run (not of all time)
    * @throws IllegalArgumentException You will gen an error, if you try to set generationsMaximum smaller than zero.
    */
   public int evolute(int generationsMaximum, TrainingSession session, float learningGradient) throws IllegalArgumentException {
