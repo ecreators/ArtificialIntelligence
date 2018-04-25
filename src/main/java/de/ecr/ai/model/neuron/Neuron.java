@@ -23,7 +23,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @author Bjoern Frohberg
  */
-public abstract class Neuron {
+public class Neuron {
 
     private float output;
     private float bias;
@@ -32,6 +32,8 @@ public abstract class Neuron {
     private final String name;
     private final Layer layer;
     private final NeuronType type;
+    private float desired;
+    private float error;
 
     protected Neuron(String name, Layer ownerLayer) {
         this.name = name;
@@ -75,13 +77,6 @@ public abstract class Neuron {
     }
 
     /**
-     * Returns an activation function
-     */
-    public final IActivationFunction getActivation() {
-        return activation;
-    }
-
-    /**
      * If required to change the activation function
      */
     public final void setActivation(IActivationFunction activation) {
@@ -115,11 +110,6 @@ public abstract class Neuron {
     }
 
     /**
-     * Calculates an error value pending on child neuron output values and their depending input bindings
-     */
-    protected abstract float calculateError();
-
-    /**
      * Updates the output value to this neuron. Commonly this value is caluclated. <br/>
      * Only an input neuron directly sets this output as identity.
      */
@@ -129,22 +119,16 @@ public abstract class Neuron {
 
     /**
      * Returns the calculated error
-     *
-     * @deprecated Will be removed. Use {@link #calculateError()} instead. (#3)
      */
-    @Deprecated
     public final float getError() {
-        return calculateError();
+        return error;
     }
 
     /**
      * Set an error fixed
-     *
-     * @deprecated Will be removed. Dies nothing right now (#3)
      */
-    @Deprecated
     public final void setError(float error) {
-        // TODO removed
+        this.error = error;
     }
 
     /**
@@ -168,5 +152,57 @@ public abstract class Neuron {
         return inputBindings.stream()
                 .map(Binding::getWeight)
                 .collect(toList());
+    }
+
+    /**
+     * Sets a preferred value. Use for output layer.
+     */
+    public void setDesired(float desired) {
+        this.desired = desired;
+    }
+
+    /**
+     * Updates the error, output layer and hidden layer calculcation differ to each other.
+     * This is only for use for the output layer, else throw an exception
+     */
+    public void updateError() {
+        if (type != NeuronType.OUTPUT) {
+            throw new RuntimeException("Cannot train another type than an output layer! " + type);
+        }
+        float outputValue = getOutputValue();
+        setError(activation.derive(outputValue) * (desired - outputValue));
+    }
+
+    /**
+     * Returns the parent neuron error by this child neuron in connection to
+     */
+    public float calculateParentError(Neuron parentNeuron) {
+        float childNeuronInput = parentNeuron.getOutputValue();
+        float derivated = activation.derive(childNeuronInput);
+        float weight = getWeightIfParentNeuron(parentNeuron);
+        float error = this.error;
+        return derivated * weight * error;
+    }
+
+    /**
+     * Get the weight value for a binding with the given parent neuron, else throw exception
+     */
+    private float getWeightIfParentNeuron(Neuron parentNeuron) {
+        return inputBindings.stream()
+                .filter(b -> b.isParentNeuron(parentNeuron))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Cannot find parent neuron!"))
+                .getWeight();
+    }
+
+    /**
+     * Adjusts bias and bindings weights by error delta
+     */
+    public void applyDelta(float learningGradient) {
+        // updates the horizontal error shift, that fixes mostly local error minimum
+        bias += learningGradient * error;
+
+        // adjust weights
+        inputBindings.forEach(b -> b.updateWeight(learningGradient, this));
     }
 }

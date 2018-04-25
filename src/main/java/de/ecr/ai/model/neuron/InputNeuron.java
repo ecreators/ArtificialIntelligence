@@ -1,7 +1,6 @@
 package de.ecr.ai.model.neuron;
 
 import de.ecr.ai.model.Layer;
-import de.ecr.ai.model.exception.NotImplementedException;
 
 import static java.text.MessageFormat.format;
 
@@ -30,9 +29,5 @@ public final class InputNeuron extends Neuron implements IBindableSourceNeuron {
 		
 		super.setOutput(value);
 	}
-	
-	@Override
-	protected float calculateError() throws RuntimeException {
-		throw new NotImplementedException("Cannot use error for input neuron! Input values won't be update!");
-	}
+
 }

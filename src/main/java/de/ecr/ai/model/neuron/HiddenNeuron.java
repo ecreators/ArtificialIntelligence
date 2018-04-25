@@ -19,31 +19,9 @@ public final class HiddenNeuron extends Neuron implements IPropagateBack, IBinda
 	public HiddenNeuron(String name, Layer ownerLayer) {
 		super(name, ownerLayer);
 	}
-	
-	@Override
-	protected float calculateError() {
-		
-		// TODO calculate error based on output bindings for this neuron
-		
-		// An error value in a hidden layer represents an fine adjustment
-		// based on adjusted output binding weights. Will be clear after implementation.
-		// Just for known, this error is a balanced adjustment pending on output values.
-		// This is because adjustments to its weights, so we cannot use a fully values as
-		// in the output layer, because we will have multiple output value to regard.
-		
-		/* HELP - preview
-		Maths.CalculateDeltaHidden(pNeuron.Output, childNeuron.Error, childNeuron.Bindings[pNeuron.ID].Weight)
-		= Derivate(inputValue) * outputBindingWeight * outputBindingDelta
-		
-		parentNeuron.Error = childLayer.Neurons.Sum(childNeuron => Maths.CalculateDeltaHidden(parentNeuron.Output, childNeuron.Error, childNeuron.Bindings[parentNeuron.ID].Weight));
-		*/
-		
-		return 0;
-	}
-	
-	@Override
-	public List<Binding> bindToInputNeurons(List<IBindableSourceNeuron> neurons) {
+
+  @Override
+  public void bindToInputNeurons(List<IBindableSourceNeuron> neurons) {
 		inputBindings.addAll(neurons.stream().map(n -> new Binding(this, n)).collect(Collectors.toList()));
-		return inputBindings;
-	}
+  }
 }

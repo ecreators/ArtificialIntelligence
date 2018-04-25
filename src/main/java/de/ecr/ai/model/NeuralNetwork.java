@@ -2,13 +2,17 @@ package de.ecr.ai.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.ecr.ai.model.annotation.ForTest;
 import de.ecr.ai.model.neuron.InputNeuron;
 import de.ecr.ai.model.neuron.Neuron;
 import de.ecr.ai.model.neuron.NeuronType;
+import de.ecr.ai.model.test.TestUnit;
+import de.ecr.ai.model.test.TrainingSession;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.text.MessageFormat.format;
 import static java.util.stream.Collectors.toList;
@@ -19,15 +23,33 @@ import static java.util.stream.Collectors.toList;
  *
  * @author Bjoern Frohberg
  */
+@SuppressWarnings("WeakerAccess")
 public final class NeuralNetwork {
+
+  /**
+   * Don't stop after an amount of generations
+   * See {@link #evolute(int, TrainingSession, float)}
+   */
+  public static final int GENERATIONS_MAX = 0;
 
   private final List<Layer> layers;
   private String name;
   private float learningGradient = 0.15f;
   private long generations; // to check version of the network
+  private float totalError;
+  private float biasAll;
 
   public NeuralNetwork() {
-    this.layers = new ArrayList<Layer>();
+    this.layers = new ArrayList<>();
+  }
+
+  /**
+   * Returns the current training generation session total error. Quality = 1 - totalError.
+   * Is only representation how effective your network will be.
+   */
+  @SuppressWarnings("unused")
+  public float getTotalError() {
+    return totalError;
   }
 
   /**
@@ -37,11 +59,12 @@ public final class NeuralNetwork {
    * Only evolution process will teach the network to find a way through training sessions,<br/>
    * to identify a solution and a concept between your input and (expected) output values.<br/>
    * <br/>
-   * <b>default is 0.15 or 0.65 (recommened is an odd value)</b>
+   * <b>default is 0.15 or 0.65 (recommend is an odd value)</b>
    */
+  @SuppressWarnings("unused")
   public float getLearningGradient() {
-    // TODO set leaningGradient in preparation for training session.
-    // TODO training session data first!
+    // set leaningGradient in preparation for training session.
+    // training session data first!
     return learningGradient;
   }
 
@@ -52,13 +75,21 @@ public final class NeuralNetwork {
   public float[] test(float... inputValues) {
 
     Layer inputLayer = layers.get(0);
+    if (inputValues == null || inputValues.length != inputLayer.countNeurons()) {
+      throw new IllegalArgumentException("inputValues must be the same count");
+    }
+
     List<Neuron> neurons = Layer.getNeurons(inputLayer);
     for (int i = 0; i < neurons.size(); i++) {
       InputNeuron neuron = (InputNeuron) neurons.get(i);
       neuron.setInputValue(inputValues[i]);
     }
-    layers.forEach(Layer::propagate);
-    return layers.get(layers.size() - 1).getOutputs();
+    layers.stream()
+      .filter(l -> l.getType() != NeuronType.INPUT)
+      .forEach(Layer::propagate);
+
+    int lastLayerInput = layers.size() - 1;
+    return layers.get(lastLayerInput).getOutputs();
   }
 
   /**
@@ -117,6 +148,8 @@ public final class NeuralNetwork {
       parentLayer = createLayer("hidden", hiddenNeurons, NeuronType.HIDDEN, false).bindFullMesh(parentLayer);
     }
     createLayer("output", outputNeurons, NeuronType.OUTPUT, outputSoftmax).bindFullMesh(parentLayer);
+
+    layers.forEach(l -> l.setBiases(biasAll));
   }
 
   private Layer createLayer(String name, int neuronCount, NeuronType layerType, boolean outputSoftmax) {
@@ -186,6 +219,7 @@ public final class NeuralNetwork {
   /**
    * Describes the neural network target operation
    */
+  @SuppressWarnings("unused")
   public void setName(String name) {
     this.name = name;
   }
@@ -193,6 +227,7 @@ public final class NeuralNetwork {
   /**
    * Converts {@link MemoryData} from {@link #readMemory()} into a json string
    */
+  @SuppressWarnings("unused")
   public String saveToJson() {
     return saveToJson(readMemory());
   }
@@ -223,5 +258,119 @@ public final class NeuralNetwork {
     }
   }
 
-  // TODO how do a training session? prototype TrainingSession and TrainingUnit
+  /**
+   * Replaces a particular weight in a input binding. You need to know how your network is sculpt.
+   */
+  @SuppressWarnings("SameParameterValue")
+  @ForTest
+  void setWeight(int layerIndex, int neuronIndex, int bindingIndex, float weightToSet) {
+    Layer layer = layers.get(layerIndex);
+    Neuron neuron = Layer.getNeurons(layer).get(neuronIndex);
+    Binding binding = neuron.getInputBindings().get(bindingIndex);
+    binding.setWeight(weightToSet);
+  }
+
+  /**
+   * One roundabout for a learning process. Tell the net, what it is to learn.
+   * Use {@link #evolute} to learn multiple generations, instead.
+   */
+  @SuppressWarnings("WeakerAccess")
+  public void train(TrainingSession session, float learningGradient) {
+    this.learningGradient = learningGradient;
+    this.generations++;
+
+    Layer outputLayer = layers.get(layers.size() - 1);
+
+    for (TestUnit test : session.tests) {
+      // this is, what the network thinks might be correct as prediction / guess
+      this.test(test.inputValues);
+
+      // back pass a step to evolute the network weights -> long for "magic"
+      // routine for output layer
+      outputLayer.updateError(test.desiredValues);
+
+      // routine for hidden layer
+      // update error in last to first hidden layer
+      // retrieve data for error from output layer to second hidden layer)
+      for (int i = layers.size() - 2; i > 0; i--) {
+        layers.get(i).updateErrors();
+      }
+
+      // accept errors fixing (gradient descent)
+      // perform back propagation
+      for (int i = layers.size() - 1; i > 0; i--) {
+        layers.get(i).applyDeltas(learningGradient);
+      }
+
+      totalError = getTotalError(test.desiredValues);
+      float value = totalError;
+      String data = String.format(": total error: %.4f", value);
+      System.out.println("#" + generations + data);
+      session.totalError = totalError;
+    }
+
+    session.notifyTrainingGenerationDone(this);
+  }
+
+  /**
+   * Identifies the error from each output layer neuron. Always positive as average of all sum errors.
+   */
+  @SuppressWarnings("WeakerAccess")
+  public float getTotalError(float[] desiredValues) {
+    return layers.get(layers.size() - 1).getTotalError(desiredValues);
+  }
+
+  /**
+   * Uses an iteration to call train to keep the caller small.
+   * Remember a neural network is the "brain" of your future object (a bird or so).
+   * There you won't be need to implement the iteration all over again.
+   * More see {@link #evolute(int, TrainingSession, float)}
+   *
+   * @return returns the generations run (not of all time)
+   */
+  @SuppressWarnings({"unused", "WeakerAccess"})
+  public int evolute(TrainingSession session, float learningGradient) {
+    return evolute(GENERATIONS_MAX, session, learningGradient);
+  }
+
+  /**
+   * Evolutes a brain of an amount of generations or "till infinity"
+   *
+   * @return returns the generations run (not of all time)
+   * @throws IllegalArgumentException You will gen an error, if you try to set generationsMaximum smaller than zero.
+   */
+  public int evolute(int generationsMaximum, TrainingSession session, float learningGradient) throws IllegalArgumentException {
+    if (generationsMaximum < 0) {
+      throw new IllegalArgumentException("generationsMaximum must be positive or 0 (zero)!");
+    }
+
+    int gen = 0;
+    boolean untilEndOfLife = Objects.equals(generationsMaximum, GENERATIONS_MAX);
+    do {
+      train(session, learningGradient);
+
+      if (session.trainingStopDefinition != null && session.trainingStopDefinition.isTolerantTotalError(totalError)) {
+        break;
+      }
+
+      // .. do output here, if you want ..
+
+      gen++;
+    } while (untilEndOfLife || gen <= generationsMaximum);
+    return gen;
+  }
+
+  public Layer findChildLayer(Layer layer) {
+    for (int i = 0; i < layers.size(); i++) {
+      Layer other = layers.get(i);
+      if (other == layer && i + 1 < layers.size()) {
+        return layers.get(i + 1);
+      }
+    }
+    return null;
+  }
+
+  public void setBiasInitialValues(float biasAll) {
+    this.biasAll = biasAll;
+  }
 }
