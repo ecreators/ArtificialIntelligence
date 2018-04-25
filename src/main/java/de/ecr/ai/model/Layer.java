@@ -1,5 +1,7 @@
 package de.ecr.ai.model;
 
+import de.ecr.ai.model.annotation.LearningData;
+import de.ecr.ai.model.exception.NotImplementedException;
 import de.ecr.ai.model.neuron.*;
 
 import java.util.ArrayList;
@@ -43,6 +45,15 @@ public final class Layer {
         this.name = name;
         this.network = network;
         this.neurons = new ArrayList<>();
+    }
+
+    /**
+     * Returns an error value for a given parent neuron in connection (binding)
+     */
+    public float calculateHiddenError(Neuron parentNeuron) {
+        return (float) neurons.stream()
+                .mapToDouble(childNeuron -> childNeuron.calculateParentError(parentNeuron))
+                .sum();
     }
 
     /**
@@ -197,5 +208,56 @@ public final class Layer {
 
     static List<Neuron> getNeurons(Layer layer) {
         return layer.neurons;
+    }
+
+    /**
+     * After every error value on each neuron was calculated, this function accepts each weight delta to its bindings.
+     * This is the learning process. This annotation {@link LearningData} represents only a marker for learning relevant
+     * data. It is a flag.
+     */
+    @LearningData
+    public void applyDeltas(float learningGradient) {
+        throw new NotImplementedException("Look away! This error is not real.");
+    }
+
+    /**
+     * Sets the desired testing values to an output layer (only, else throw an exception).
+     * After that, the error values will be set for every output neuron. Regarding hidden layer neurons.
+     * This error will be used for parent layer neurons, this error need to be devided by weight effect.
+     * Because multiple bound neurons connecting multiple neurons in a full mesh, this error is updated
+     * multiple times. So the update error value and adjustment of weights need to be devided into two for-loops.
+     *
+     * @param desiredValues requires the exact same size as number of output neurons!
+     */
+    public void updateError(float[] desiredValues) {
+        if (type != NeuronType.OUTPUT) {
+            throw new RuntimeException("Cannot update desired values at another layer type than output layer! type = " + type);
+        }
+
+        if (desiredValues == null || desiredValues.length != countNeurons()) {
+            throw new IllegalArgumentException("Your desired values must be count of neurons in the output layer!");
+        }
+        for (int i = 0; i < neurons.size(); i++) {
+            Neuron neuron = neurons.get(i);
+            neuron.setDesired(desiredValues[i]);
+            neuron.updateError();
+        }
+    }
+
+    /**
+     * Updates each neuron error value for further parent layer neuron errors. Only callable for hidden layers
+     */
+    public void updateErrors() {
+        if (type != NeuronType.HIDDEN) {
+            throw new RuntimeException("Cannot run this method only for a hidden layer! type = " + type);
+        }
+
+        Layer childLayer = network.findChildLayer(this);
+        if (childLayer == null) {
+            throw new RuntimeException("No child layer found on layer: " + name);
+        }
+        for (Neuron parentNeuron : neurons) {
+            parentNeuron.setError(childLayer.calculateHiddenError(parentNeuron));
+        }
     }
 }
