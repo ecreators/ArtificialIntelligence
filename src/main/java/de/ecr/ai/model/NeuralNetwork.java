@@ -6,10 +6,13 @@ import de.ecr.ai.model.annotation.ForTest;
 import de.ecr.ai.model.neuron.InputNeuron;
 import de.ecr.ai.model.neuron.Neuron;
 import de.ecr.ai.model.neuron.NeuronType;
+import de.ecr.ai.model.test.TestUnit;
+import de.ecr.ai.model.test.TrainingSession;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.text.MessageFormat.format;
 import static java.util.stream.Collectors.toList;
@@ -228,6 +231,9 @@ public final class NeuralNetwork {
     }
   }
 
+  /**
+   * Replaces a particular weight in a input binding. You need to know how your network is sculpt.
+   */
   @ForTest
   void setWeight(int layerIndex, int neuronIndex, int bindingIndex, float weightToSet) {
     Layer layer = layers.get(layerIndex);
@@ -236,5 +242,60 @@ public final class NeuralNetwork {
     binding.setWeight(weightToSet);
   }
 
-  // TODO how do a training session? prototype TrainingSession and TrainingUnit
+  /**
+   * One roundabout for a learning process. Tell the net, what it is to learn.
+   * Use {@link #evolute} to learn multiple generations, instead.
+   */
+  public void train(TrainingSession session, float learningGradient) {
+    this.learningGradient = learningGradient;
+    this.generations++;
+    for (TestUnit test : session.tests) {
+      // this is, what the network thinks might be correct as prediction / guess
+      float[] prediction = this.test(test.inputValues);
+
+      // TODO back pass a step to evolute the network weights -> long for "magic"
+    }
+  }
+
+  /**
+   * Uses an iteration to call train to keep the caller small.
+   * Remember a neural network is the "brain" of your future object (a bird or so).
+   * There you won't be need to implement the iteration all over again.
+   * More see {@link #evolute(int, TrainingSession, float)}
+   */
+  public int evolute(TrainingSession session, float learningGradient) {
+    return evolute(GENERATIONS_MAX, session, learningGradient);
+  }
+
+  /**
+   * Don't stop after an amount of generations
+   * See {@link #evolute(int, TrainingSession, float)}
+   */
+  public static final int GENERATIONS_MAX = 0;
+
+  /**
+   * Evolutes a brain of an amount of generations or "till infinity"
+   *
+   * @param generationsMaximum
+   * @param session
+   * @param learningGradient
+   * @return
+   * @throws IllegalArgumentException You will gen an error, if you try to set generationsMaximum smaller than zero.
+   */
+  public int evolute(int generationsMaximum, TrainingSession session, float learningGradient) throws IllegalArgumentException {
+    if (generationsMaximum < 0) {
+      throw new IllegalArgumentException("generationsMaximum must be positive or 0 (zero)!");
+    }
+
+    int gen = 0;
+    boolean untilEndOfLife = Objects.equals(generationsMaximum, GENERATIONS_MAX);
+    do {
+      train(session, learningGradient);
+
+      // .. do output here, if you want ..
+
+      gen++;
+    } while (untilEndOfLife || gen <= generationsMaximum);
+    return gen;
+  }
 }

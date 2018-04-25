@@ -1,8 +1,18 @@
 package de.ecr.ai.model;
 
 import de.ecr.ai.model.neuron.activation.IActivationFunction;
+import de.ecr.ai.model.test.TestUnit;
+import de.ecr.ai.model.test.TrainingSession;
+import de.ecr.ai.utils.NeuralNetworkUtils;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -148,4 +158,67 @@ public class NeuralNetworkTest {
 
     assertThat(output, is(equalTo(activated)));
   }
+
+  /**
+   * A generation is the point from input values over propagation to gradient descent error correction
+   * and weight adjustment
+   */
+  @Test
+  public void testOneGenerationXor() {
+    // given
+    NeuralNetwork brain = new NeuralNetwork();
+    int inputs = 2;
+    int hiddenLayersCount = 1;
+    int hiddenNeurons = NeuralNetworkUtils.calculateHiddenNeuronCount(hiddenLayersCount, inputs);
+    brain.build(inputs, hiddenLayersCount, hiddenNeurons, 1, false);
+
+    // when
+    TrainingSession session = new TrainingSession();
+    // this is the xor smoke test
+    // Description: the neural network shall be able to identify, when inputs identify "is xor"
+    // XOR: true, if only one of 2 inputs is 1
+    session.tests.add(newTestUnit(asList(0f, 0f), singletonList(0f)));
+    session.tests.add(newTestUnit(asList(0f, 1f), singletonList(1f)));
+    session.tests.add(newTestUnit(asList(1f, 0f), singletonList(1f)));
+    session.tests.add(newTestUnit(asList(1f, 1f), singletonList(0f)));
+
+    // then
+    brain.train(session, 0.35f);
+  }
+
+  /**
+   * Retrieve a test unit given only by inputs and desired output values
+   */
+  private static TestUnit newTestUnit(List<Float> inputs, List<Float> desiredOutputs) {
+    TestUnit testUnit = new TestUnit();
+    testUnit.inputValues = toFloatArray(inputs);
+    testUnit.desiredValues = toFloatArray(desiredOutputs);
+    return testUnit;
+  }
+
+  @Test
+  public void testToArray() {
+    // given
+    List<Float> arr = new ArrayList<>();
+    arr.add(1f);
+    arr.add(2f);
+    arr.add(3f);
+
+    // when
+    float[] floatings = toFloatArray(arr);
+
+    // then
+    assertThat("No equal array match!", Arrays.equals(floatings, new float[]{1, 2, 3}), is(true));
+  }
+
+  /**
+   * Converts List&lt;Float&gt; to float[]
+   */
+  private static float[] toFloatArray(List<Float> floatings) {
+    float[] floats = new float[floatings.size()];
+    AtomicInteger i = new AtomicInteger();
+    floatings.forEach(f -> floats[i.getAndIncrement()] = f);
+    return floats;
+  }
+
 }
