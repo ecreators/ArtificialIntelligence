@@ -1,7 +1,6 @@
 package de.ecr.ai.model;
 
 import de.ecr.ai.model.annotation.LearningData;
-import de.ecr.ai.model.exception.NotImplementedException;
 import de.ecr.ai.model.neuron.*;
 
 import java.util.ArrayList;
@@ -17,26 +16,8 @@ import static java.util.stream.Collectors.toList;
  * @author Bjoern Frohberg
  */
 public final class Layer {
-	
-	/*
-	Path to go structure
-	
-	create layer Input, then Hidden, may be a second Hidden, last Output
-	clear neurons <-- if restored, else not nessessary
-	build neurons
-	bind full mesh
-	
-	-- ready to go
-	
-	call propagate
-	call getOutputValues for test (in test AND training)
-	
-	(only training)
-	TODO call train set desired values for output
-	TODO in TEST-Method handle, when to stop iteration, if so doing
-	 */
 
-    private final String name;
+  private final String name;
     private final List<Neuron> neurons;
     private NeuronType type;
     private final NeuralNetwork network; // for later commits "back propagation"
@@ -50,23 +31,16 @@ public final class Layer {
     /**
      * Returns an error value for a given parent neuron in connection (binding)
      */
-    public float calculateHiddenError(Neuron parentNeuron) {
+    private float calculateHiddenError(Neuron parentNeuron) {
         return (float) neurons.stream()
                 .mapToDouble(childNeuron -> childNeuron.calculateParentError(parentNeuron))
                 .sum();
     }
 
     /**
-     * Empties neurons list
-     */
-    public void clear() {
-        this.neurons.clear();
-    }
-
-    /**
      * Appends new neurons (no softmax on output)
      */
-    public Layer createNeurons(int neuronsCount, NeuronType type, boolean softmax) {
+    public void createNeurons(int neuronsCount, NeuronType type, boolean softmax) {
         this.type = type;
 
         Function<Integer, Neuron> builder = detectNeuronBuilder(type, softmax);
@@ -94,7 +68,6 @@ public final class Layer {
         if (neuronsCount > neurons.size()) {
             throw new RuntimeException("Issues during creating neurons! count not as expected");
         }
-        return this;
     }
 
     /**
@@ -206,7 +179,7 @@ public final class Layer {
                 .collect(toList());
     }
 
-    static List<Neuron> getNeurons(Layer layer) {
+  public static List<Neuron> getNeurons(Layer layer) {
         return layer.neurons;
     }
 
@@ -216,8 +189,8 @@ public final class Layer {
      * data. It is a flag.
      */
     @LearningData
-    public void applyDeltas(float learningGradient) {
-        throw new NotImplementedException("Look away! This error is not real.");
+    void applyDeltas(float learningGradient) {
+      this.neurons.forEach(childNeuron -> childNeuron.applyDelta(learningGradient));
     }
 
     /**
@@ -260,4 +233,27 @@ public final class Layer {
             parentNeuron.setError(childLayer.calculateHiddenError(parentNeuron));
         }
     }
+
+  /**
+   * Averages the differences between expectations and actual values
+   */
+  public float getTotalError(float[] desiredValues) {
+    if (type != NeuronType.OUTPUT) {
+      throw new RuntimeException("Can only be used on output layer!");
+    }
+    float sum = 0;
+    for (int i = 0; i < neurons.size(); i++) {
+      Neuron neuron = neurons.get(i);
+      float desiredValue = desiredValues[i];
+      float actualValue = neuron.getOutputValue();
+
+      // need to be positive, because an error value can be fixed by increasing or descreasing
+      sum = (float) Math.pow(desiredValue - actualValue, 2);
+    }
+    return sum / countNeurons();
+  }
+
+  public void setBiases(float bias) {
+    neurons.forEach(n -> n.setBias(bias));
+  }
 }

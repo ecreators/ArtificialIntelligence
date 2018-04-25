@@ -23,7 +23,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @author Bjoern Frohberg
  */
-public abstract class Neuron {
+public class Neuron {
 
     private float output;
     private float bias;
@@ -77,13 +77,6 @@ public abstract class Neuron {
     }
 
     /**
-     * Returns an activation function
-     */
-    public final IActivationFunction getActivation() {
-        return activation;
-    }
-
-    /**
      * If required to change the activation function
      */
     public final void setActivation(IActivationFunction activation) {
@@ -115,11 +108,6 @@ public abstract class Neuron {
         float inputSum = (float) sum;
         this.output = activation.activate(inputSum);
     }
-
-    /**
-     * Calculates an error value pending on child neuron output values and their depending input bindings
-     */
-    protected abstract float calculateError();
 
     /**
      * Updates the output value to this neuron. Commonly this value is caluclated. <br/>
@@ -205,5 +193,16 @@ public abstract class Neuron {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find parent neuron!"))
                 .getWeight();
+    }
+
+    /**
+     * Adjusts bias and bindings weights by error delta
+     */
+    public void applyDelta(float learningGradient) {
+        // updates the horizontal error shift, that fixes mostly local error minimum
+        bias += learningGradient * error;
+
+        // adjust weights
+        inputBindings.forEach(b -> b.updateWeight(learningGradient, this));
     }
 }

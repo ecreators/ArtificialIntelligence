@@ -30,7 +30,7 @@ public final class Binding {
         this.childName = child.getName();
         randomizeWeight();
         if (parentNeuron == null) {
-            throw new IllegalArgumentException("Your neuron may not be null! " + parentNeuron);
+          throw new IllegalArgumentException("Your neuron may not be null! parentNeuron");
         }
     }
 
@@ -63,19 +63,6 @@ public final class Binding {
     }
 
     /**
-     * Learning rule. Update algorithm for weight.<br/>
-     * This is the dynamic a neural network does.<br/>
-     * <b>Learning for a neural network is a nearing way to get closer to an expected value.</b><br/>
-     * Every error a network calculates from a predicted output will<br/>
-     * change every weight on previous bindings in each layer, but balanced by<br/>
-     * output weights on output bindings.
-     */
-    public void learn(float learningGradient, float error) {
-        float in = parentNeuron.getOutputValue();
-        weight += learningGradient * in * error;
-    }
-
-    /**
      * Returns the weight for a connected input value (output of parent neuron).<br/>
      * It balances the input value to possibly be able to predict a close valid output value.<br/>
      * The combination of (input x weight = output) represents everything, what a network does,<br/>
@@ -92,4 +79,15 @@ public final class Binding {
     public boolean isParentNeuron(Neuron parentNeuron) {
         return this.parentNeuron == parentNeuron;
     }
+
+  /**
+   * Update weight for child neuron, based on it error
+   */
+  public void updateWeight(float learningGradient, Neuron childNeuron) {
+    weight += calculateWeightDelta(childNeuron, parentNeuron.getOutputValue(), learningGradient);
+  }
+
+  private static float calculateWeightDelta(Neuron childNeuron, float outputValue, float learningGradient) {
+    return learningGradient * outputValue * childNeuron.getError();
+  }
 }

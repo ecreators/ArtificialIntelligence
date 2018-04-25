@@ -4,6 +4,7 @@ import de.ecr.ai.model.neuron.activation.IActivationFunction;
 import de.ecr.ai.model.test.TestUnit;
 import de.ecr.ai.model.test.TrainingSession;
 import de.ecr.ai.utils.NeuralNetworkUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.Math.round;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.*;
@@ -173,6 +175,84 @@ public class NeuralNetworkTest {
     brain.build(inputs, hiddenLayersCount, hiddenNeurons, 1, false);
 
     // when
+    TrainingSession session = createXorSmokeTestSession();
+
+    // then
+
+    float old = session.totalError;
+    brain.train(session, 0.35f);
+    // is equal as train only
+    // brain.evolute(1, session, 0.35f);
+
+    assertThat(session.totalError, is(not(equalTo(old))));
+  }
+
+  /**
+   * Train multiple times of generations to get a valid prediction
+   */
+  @Test
+  @Ignore // see fixme - this is tricky
+  public void doSmokeTest() {
+
+    // FIXME -> the training works, but it need some time to identify why the training resolves zero values
+    // after rounding. Seems not the network did not already identified the correct weighting.
+    // need some debugging.
+
+    // given
+    NeuralNetwork brain = new NeuralNetwork();
+    brain.setBiasInitialValues(1);
+
+    int inputs = 2;
+    int hiddenLayersCount = 1;
+    int hiddenNeurons = NeuralNetworkUtils.calculateHiddenNeuronCount(hiddenLayersCount, inputs);
+    brain.build(inputs, hiddenLayersCount, hiddenNeurons, 1, false);
+
+    // when
+    TrainingSession session = createXorSmokeTestSession();
+
+    // no training
+    int[] expectedSmokeTestResults = {0, 1, 1, 0};
+    // demo, no training - for debugging
+    int[] testResults = readSmokeTestResults(brain, session);
+
+    // with training
+    int generations = 600;
+    brain.evolute(generations, session, 0.35f);
+
+    // for debug only
+    testResults = readSmokeTestResults(brain, session);
+
+    // after 600 should be enough to solve xor as smoke test
+    generations = 13000;
+    brain.evolute(generations, session, 0.15f);
+    testResults = readSmokeTestResults(brain, session);
+
+    // then
+    assertThat(testResults, is(equalTo(expectedSmokeTestResults)));
+
+    // then
+    testResults = readSmokeTestResults(brain, session);
+    assertThat(testResults, is(equalTo(expectedSmokeTestResults)));
+  }
+
+  private static int[] readSmokeTestResults(NeuralNetwork brain, TrainingSession session) {
+    // test does never train! - only reading
+    float test00 = brain.test(session.tests.get(0).inputValues)[0]; // having always 1 output, so index 0
+    float test01 = brain.test(session.tests.get(1).inputValues)[0];
+    float test10 = brain.test(session.tests.get(2).inputValues)[0];
+    float test11 = brain.test(session.tests.get(3).inputValues)[0];
+    return new int[]{
+      rInt(test00),
+      rInt(test01),
+      rInt(test10),
+      rInt(test11)};
+  }
+
+  private static int rInt(float value) {
+    return round(value);
+  }
+
+  private TrainingSession createXorSmokeTestSession() {
     TrainingSession session = new TrainingSession();
     // this is the xor smoke test
     // Description: the neural network shall be able to identify, when inputs identify "is xor"
@@ -181,12 +261,9 @@ public class NeuralNetworkTest {
     session.tests.add(newTestUnit(asList(0f, 1f), singletonList(1f)));
     session.tests.add(newTestUnit(asList(1f, 0f), singletonList(1f)));
     session.tests.add(newTestUnit(asList(1f, 1f), singletonList(0f)));
-
-    // then
-    brain.train(session, 0.35f);
-    // is equal as train only
-    // brain.evolute(1, session, 0.35f);
+    return session;
   }
+
 
   /**
    * Retrieve a test unit given only by inputs and desired output values
