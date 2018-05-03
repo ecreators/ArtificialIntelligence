@@ -1,5 +1,8 @@
 package de.ecr.ai.model;
 
+import de.ecr.ai.demo.ArrayUtils;
+import de.ecr.ai.demo.NetworkRack;
+import de.ecr.ai.demo.TrainingUnit;
 import de.ecr.ai.model.neuron.activation.IActivationFunction;
 import de.ecr.ai.model.test.TestUnit;
 import de.ecr.ai.model.test.TrainingSession;
@@ -12,7 +15,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static de.ecr.ai.demo.NeuralNetwork.fact;
+import static java.lang.Math.pow;
 import static java.lang.Math.round;
+import static java.text.MessageFormat.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.*;
@@ -23,6 +29,55 @@ import static org.hamcrest.core.Is.is;
  * @author Bjoern Frohberg
  */
 public class NeuralNetworkTest {
+
+  private int inputs = 2;
+
+  private NetworkRack rack = new de.ecr.ai.demo.NetworkRack()
+    .setInputNeurons(inputs)
+    .addHiddenLayer(fact(pow(2, inputs)))
+    .setOutputNeurons(1);
+
+  @Test
+  public void xorTest() {
+    // given
+    de.ecr.ai.demo.NeuralNetwork network = new de.ecr.ai.demo.NeuralNetwork();
+    network.build(rack);
+
+    // when
+    float learnGradient = 0.65f;
+    float errorTolerance = 0.1f;
+    TrainingUnit test00 = new TrainingUnit().setInputs(0, 0).setDesiredOutputs(0);
+    TrainingUnit test01 = new TrainingUnit().setInputs(0, 1).setDesiredOutputs(1);
+    TrainingUnit test10 = new TrainingUnit().setInputs(1, 0).setDesiredOutputs(1);
+    TrainingUnit test11 = new TrainingUnit().setInputs(1, 1).setDesiredOutputs(0);
+    List<TrainingUnit> units = Arrays.asList(test00, test01, test10, test11);
+
+    do {
+      network.invokeTraining(learnGradient, units);
+      System.out.println(format("Generation: {0} -> Error: {1} ~ Weights: {2}", network.getGeneration(), network.getError(), network.getWeights()));
+    } while (network.getError() >= errorTolerance);
+
+    // then
+    network.print();
+
+    int[] results = ArrayUtils.round(network.test(test01.getTestValues()));
+    assertThat(round(results[0]), is(equalTo(ArrayUtils.round(test01.getExpectationValues())[0])));
+
+    results = ArrayUtils.round(network.test(test10.getTestValues()));
+    assertThat(round(results[0]), is(equalTo(ArrayUtils.round(test10.getExpectationValues())[0])));
+
+    results = ArrayUtils.round(network.test(test00.getTestValues()));
+    assertThat(round(results[0]), is(equalTo(ArrayUtils.round(test00.getExpectationValues())[0])));
+
+    results = ArrayUtils.round(network.test(test11.getTestValues()));
+    assertThat(round(results[0]), is(equalTo(ArrayUtils.round(test11.getExpectationValues())[0])));
+  }
+
+  @Test
+  public void testSumFact() {
+    int fact = fact(4);
+    assertThat(fact, is(equalTo(10)));
+  }
 
   /**
    * Test, how to setup a network manually with "build"-method and usage of "readMemory"
@@ -81,7 +136,7 @@ public class NeuralNetworkTest {
     network.build(inputs, hiddenLayersCount, hiddens, outputs, softMax);
 
     // when
-    float[] values = network.test(0, 1);
+    Float[] values = network.test(0, 1);
 
     // then
     assertThat(values, is(notNullValue()));
@@ -206,6 +261,7 @@ public class NeuralNetworkTest {
     int hiddenLayersCount = 1;
     int hiddenNeurons = NeuralNetworkUtils.calculateHiddenNeuronCount(hiddenLayersCount, inputs);
     brain.build(inputs, hiddenLayersCount, hiddenNeurons, 1, false);
+//    brain.roundOutputs();
 
     // when
     TrainingSession session = createXorSmokeTestSession();
@@ -216,22 +272,22 @@ public class NeuralNetworkTest {
     int[] testResults = readSmokeTestResults(brain, session);
 
     // with training
-    int generations = 600;
-    brain.evolute(generations, session, 0.35f);
+    int generations = 1000;
+    float learningGradient = 0.35f;
 
-    // for debug only
-    testResults = readSmokeTestResults(brain, session);
-
-    // after 600 should be enough to solve xor as smoke test
-    generations = 13000;
-    brain.evolute(generations, session, 0.15f);
-    testResults = readSmokeTestResults(brain, session);
+    // when
+    for (int gen = 0; gen < generations; gen++) {
+      brain.train(session, learningGradient);
+      System.out.println(String.format("total error, gen# %d: %.4f", gen, session.totalError));
+    }
 
     // then
-    assertThat(testResults, is(equalTo(expectedSmokeTestResults)));
-
-    // then
-    testResults = readSmokeTestResults(brain, session);
+    testResults = new int[]{
+      rInt(brain.test(0, 0)[0]), // proper desired XOR 0
+      rInt(brain.test(0, 1)[0]), // proper desired XOR 1
+      rInt(brain.test(1, 0)[0]), // proper desired XOR 1
+      rInt(brain.test(1, 1)[0]) // proper desired XOR 0
+    };
     assertThat(testResults, is(equalTo(expectedSmokeTestResults)));
   }
 

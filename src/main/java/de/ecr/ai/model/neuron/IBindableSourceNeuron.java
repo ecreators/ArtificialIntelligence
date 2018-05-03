@@ -12,7 +12,7 @@ public interface IBindableSourceNeuron {
 	/**
 	 * Returns the calculated output value
 	 */
-	float getOutputValue();
+	Float getOutputValue();
 	
 	/**
 	 * Returns neuron name

@@ -56,7 +56,7 @@ public class Neuron {
     /**
      * Return a set output value
      */
-    public final float getOutputValue() {
+    public final Float getOutputValue() {
         return output;
     }
 

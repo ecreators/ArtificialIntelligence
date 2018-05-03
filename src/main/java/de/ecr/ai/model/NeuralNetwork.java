@@ -72,7 +72,7 @@ public final class NeuralNetwork {
    * Propagate new or learned input values (normalized between 0 and 1) through a (un)trained
    * neural network and passes the predicted output values back as result.
    */
-  public float[] test(float... inputValues) {
+  public Float[] test(float... inputValues) {
 
     Layer inputLayer = layers.get(0);
     if (inputValues == null || inputValues.length != inputLayer.countNeurons()) {
@@ -303,9 +303,6 @@ public final class NeuralNetwork {
       }
 
       totalError = getTotalError(test.desiredValues);
-      float value = totalError;
-      String data = String.format(": total error: %.4f", value);
-      System.out.println("#" + generations + data);
       session.totalError = totalError;
     }
 
@@ -372,5 +369,9 @@ public final class NeuralNetwork {
 
   public void setBiasInitialValues(float biasAll) {
     this.biasAll = biasAll;
+  }
+
+  public void roundOutputs() {
+    layers.get(layers.size() - 1).roundOutputs();
   }
 }

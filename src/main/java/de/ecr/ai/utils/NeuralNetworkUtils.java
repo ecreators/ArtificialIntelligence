@@ -15,7 +15,7 @@ public final class NeuralNetworkUtils {
    * This was a tricky part to identify the best neural network count for hidden neurons
    */
   public static int calculateHiddenNeuronCount(int hiddenLayers, int inputs) {
-    return (int) squareSum(Math.pow(2, hiddenLayers) * inputs);
+    return (int) squareSum(Math.pow(2, inputs) * hiddenLayers);
   }
 
   /**
